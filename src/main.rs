@@ -202,6 +202,8 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
     let mut next_reconnect = Instant::now();
     let mut next_activity_update = Instant::now();
 
+    let mut discord_connection_failed = false;
+
     loop {
         system.refresh_all();
 
@@ -228,7 +230,11 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 Err(error) => {
-                    warn!("Discord connection failed: {}", error);
+                    if !discord_connection_failed {
+                        warn!("Discord connection failed: {}", error);
+                        discord_connection_failed = true;
+                    }                    
+                    
                     next_reconnect = Instant::now() + Duration::from_secs(5);
                 }
             }
