@@ -2,6 +2,8 @@
 
 A simple tool to automatically display your Minecraft instance and playtime from Prism Launcher on Discord.
 
+![Discord RPC example](docs/discord.png)
+
 # Build
 
 > [!IMPORTANT]
