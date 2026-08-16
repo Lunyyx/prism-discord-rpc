@@ -1,3 +1,4 @@
+use log::{error, info, warn};
 use serde::Deserialize;
 use std::fs;
 use std::io::{Read, Write};
@@ -34,6 +35,8 @@ struct DiscordClient {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     monitor()
 }
 
@@ -131,7 +134,7 @@ impl DiscordClient {
 
             match UnixStream::connect(&socket_path) {
                 Ok(socket) => {
-                    println!("Connected to Discord IPC!");
+                    info!("Connected to Discord IPC!");
 
                     let mut client = Self { socket };
 
@@ -165,9 +168,9 @@ fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> 
     match instance {
         Some(instance) => {
             if session.is_none() {
-                println!("Minecraft started !");
-                println!("Instance : {}", instance.name);
-                println!("Minecraft : {}", instance.minecraft_version);
+                info!("Minecraft started !");
+                info!("Instance : {}", instance.name);
+                info!("Minecraft : {}", instance.minecraft_version);
 
                 *session = Some(Session { instance });
 
@@ -213,7 +216,7 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                         };
 
                         if let Err(error) = result {
-                            println!("Discord activity update failed: {}", error);
+                            warn!("Discord activity update failed: {}", error);
 
                             discord = None;
                             next_reconnect = Instant::now() + Duration::from_secs(5);
@@ -222,7 +225,7 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 Err(error) => {
-                    println!("Discord connection failed: {}", error);
+                    warn!("Discord connection failed: {}", error);
                     next_reconnect = Instant::now() + Duration::from_secs(5);
                 }
             }
@@ -241,7 +244,7 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 if let Err(error) = result {
-                    println!("Discord connection lost: {}", error);
+                    warn!("Discord connection lost: {}", error);
 
                     discord = None;
                     next_reconnect = Instant::now() + Duration::from_secs(5);
@@ -261,7 +264,7 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                     };
 
                     if let Err(error) = result {
-                        println!("Discord connection lost: {}", error);
+                        warn!("Discord connection lost: {}", error);
 
                         discord = None;
                         next_reconnect = Instant::now() + Duration::from_secs(5);
@@ -272,7 +275,7 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
             SessionEvent::Stopped => {
                 if let Some(discord_client) = discord.as_mut() {
                     if let Err(error) = discord_client.clear_activity() {
-                        println!("Discord connection lost: {}", error);
+                        warn!("Discord connection lost: {}", error);
 
                         discord = None;
                         next_reconnect = Instant::now() + Duration::from_secs(5);
@@ -307,7 +310,7 @@ fn find_instance(system: &System) -> Option<Instance> {
                                 return Some(instance);
                             }
                             Err(error) => {
-                                println!("Error : {}", error);
+                                error!("Error : {}", error);
                             }
                         }
                     }
