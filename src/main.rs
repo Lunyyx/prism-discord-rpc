@@ -1,11 +1,11 @@
-use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
-use std::thread;
-use std::fs;
 use serde::Deserialize;
-use sysinfo::System;
-use std::os::unix::net::UnixStream;
+use std::fs;
 use std::io::{Read, Write};
+use std::os::unix::net::UnixStream;
+use std::path::Path;
+use std::thread;
+use std::time::{Duration, Instant};
+use sysinfo::System;
 
 const DISCORD_CLIENT_ID: &str = "1538515152788258837";
 
@@ -22,14 +22,11 @@ struct Component {
 
 struct Instance {
     name: String,
-    path: PathBuf,
     minecraft_version: String,
-    java_version: String,
 }
 
 struct Session {
     instance: Instance,
-    started_at: Instant,
 }
 
 struct DiscordClient {
@@ -41,9 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 impl DiscordClient {
-    fn clear_activity(
-        &mut self,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn update_from_session(&mut self, session: &Session) -> Result<(), Box<dyn std::error::Error>> {
+        let state = format!("Minecraft {}", session.instance.minecraft_version);
+
+        self.set_activity("Minecraft", &session.instance.name, &state)
+    }
+
+    fn clear_activity(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let payload = serde_json::json!({
             "cmd": "SET_ACTIVITY",
             "args": {
@@ -53,16 +54,9 @@ impl DiscordClient {
             "nonce": uuid::Uuid::new_v4().to_string()
         });
 
-        Self::send(
-            &mut self.socket,
-            1,
-            &payload.to_string(),
-        )?;
+        Self::send(&mut self.socket, 1, &payload.to_string())?;
 
-        let (opcode, response) = Self::receive(&mut self.socket)?;
-
-        println!("CLEAR_ACTIVITY response opcode: {}", opcode);
-        println!("CLEAR_ACTIVITY response: {}", response);
+        let _ = Self::receive(&mut self.socket)?;
 
         Ok(())
     }
@@ -88,23 +82,14 @@ impl DiscordClient {
             "nonce": uuid::Uuid::new_v4().to_string()
         });
 
-        Self::send(
-            &mut self.socket,
-            1,
-            &payload.to_string(),
-        )?;
+        Self::send(&mut self.socket, 1, &payload.to_string())?;
 
-        let (opcode, response) = Self::receive(&mut self.socket)?;
-
-        println!("SET_ACTIVITY response opcode: {}", opcode);
-        println!("SET_ACTIVITY response: {}", response);
+        let _ = Self::receive(&mut self.socket)?;
 
         Ok(())
     }
 
-    fn receive(
-        socket: &mut UnixStream,
-    ) -> Result<(u32, String), Box<dyn std::error::Error>> {
+    fn receive(socket: &mut UnixStream) -> Result<(u32, String), Box<dyn std::error::Error>> {
         let mut opcode_bytes = [0u8; 4];
         let mut length_bytes = [0u8; 4];
 
@@ -142,16 +127,11 @@ impl DiscordClient {
         let runtime_dir = std::env::var("XDG_RUNTIME_DIR")?;
 
         for i in 0..10 {
-            let socket_path = format!(
-                "{}/discord-ipc-{}",
-                runtime_dir,
-                i
-            );
+            let socket_path = format!("{}/discord-ipc-{}", runtime_dir, i);
 
             match UnixStream::connect(&socket_path) {
                 Ok(socket) => {
                     println!("Connected to Discord IPC!");
-                    println!("Socket: {}", socket_path);
 
                     let mut client = Self { socket };
 
@@ -160,18 +140,9 @@ impl DiscordClient {
                         "client_id": DISCORD_CLIENT_ID
                     });
 
-                    Self::send(
-                        &mut client.socket,
-                        0,
-                        &handshake.to_string(),
-                    )?;
+                    Self::send(&mut client.socket, 0, &handshake.to_string())?;
 
-                    println!("Handshake sent!");
-
-                    let (opcode, payload) = Self::receive(&mut client.socket)?;
-
-                    println!("Handshake response opcode: {}", opcode);
-                    println!("Handshake response: {}", payload);
+                    let _ = Self::receive(&mut client.socket)?;
 
                     return Ok(client);
                 }
@@ -190,86 +161,123 @@ enum SessionEvent {
     None,
 }
 
-fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> SessionEvent{
-        match instance {
-            Some(instance) => {
-                if session.is_none() {
-                    println!("Minecraft started !");
-                    println!("Instance : {}", instance.name);
-                    println!("Minecraft : {}", instance.minecraft_version);
-                    println!("Java : {}", instance.java_version);
-                    println!("Path : {}", instance.path.display());
+fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> SessionEvent {
+    match instance {
+        Some(instance) => {
+            if session.is_none() {
+                println!("Minecraft started !");
+                println!("Instance : {}", instance.name);
+                println!("Minecraft : {}", instance.minecraft_version);
 
-                    *session = Some(Session { 
-                        instance, 
-                        started_at: Instant::now() 
-                    });
+                *session = Some(Session { instance });
 
-                    return SessionEvent::Started;
-                }
-
-                if let Some(session) = session.as_ref() {
-                    let elapsed = session.started_at.elapsed();
-
-                    println!("Playtime: {} secondes", elapsed.as_secs());
-                }
-
-                SessionEvent::None
+                return SessionEvent::Started;
             }
 
-            None => {
-                if let Some(current_session) = session.as_ref() {
-                    println!("Minecraft stopped!");
-                    println!(
-                        "Session: {} secondes",
-                        current_session.started_at.elapsed().as_secs()
-                    );
-                    
-                    *session = None;
-
-                    return SessionEvent::Stopped;
-                }
-
-                SessionEvent::None
-            }
+            SessionEvent::None
         }
+
+        None => {
+            if session.is_some() {
+                *session = None;
+                return SessionEvent::Stopped;
+            }
+
+            SessionEvent::None
+        }
+    }
 }
 
 fn monitor() -> Result<(), Box<dyn std::error::Error>> {
     let mut system = System::new_all();
     let mut session: Option<Session> = None;
 
-    let mut discord = DiscordClient::connect()?;
+    let mut discord: Option<DiscordClient> = None;
+    let mut next_reconnect = Instant::now();
+    let mut next_activity_update = Instant::now();
 
     loop {
         system.refresh_all();
+
+        if discord.is_none() && Instant::now() >= next_reconnect {
+            match DiscordClient::connect() {
+                Ok(client) => {
+                    discord = Some(client);
+                    next_activity_update = Instant::now() + Duration::from_secs(30);
+
+                    if let Some(session) = session.as_ref() {
+                        let result = if let Some(discord_client) = discord.as_mut() {
+                            discord_client.update_from_session(session)
+                        } else {
+                            Ok(())
+                        };
+
+                        if let Err(error) = result {
+                            println!("Discord activity update failed: {}", error);
+
+                            discord = None;
+                            next_reconnect = Instant::now() + Duration::from_secs(5);
+                        }
+                    }
+                }
+
+                Err(error) => {
+                    println!("Discord connection failed: {}", error);
+                    next_reconnect = Instant::now() + Duration::from_secs(5);
+                }
+            }
+        }
 
         let instance = find_instance(&system);
 
         let event = update_session(&mut session, instance);
 
+        if Instant::now() >= next_activity_update {
+            if let Some(session) = session.as_ref() {
+                let result = if let Some(discord_client) = discord.as_mut() {
+                    discord_client.update_from_session(session)
+                } else {
+                    Ok(())
+                };
+
+                if let Err(error) = result {
+                    println!("Discord connection lost: {}", error);
+
+                    discord = None;
+                    next_reconnect = Instant::now() + Duration::from_secs(5);
+                }
+            }
+
+            next_activity_update = Instant::now() + Duration::from_secs(30);
+        }
+
         match event {
             SessionEvent::Started => {
-                if let Some(session) = &session {
-                    let state = format!(
-                        "Minecraft {}",
-                        session.instance.minecraft_version
-                    );
+                if let Some(session) = session.as_ref() {
+                    let result = if let Some(discord_client) = discord.as_mut() {
+                        discord_client.update_from_session(session)
+                    } else {
+                        Ok(())
+                    };
 
-                    discord.set_activity(
-                        "Minecraft",
-                        &session.instance.name,
-                        &state,
-                    )?;
+                    if let Err(error) = result {
+                        println!("Discord connection lost: {}", error);
 
-                    println!("Discord activity updated!");
+                        discord = None;
+                        next_reconnect = Instant::now() + Duration::from_secs(5);
+                    }
                 }
             }
 
             SessionEvent::Stopped => {
-                discord.clear_activity()?;
+                if let Some(discord_client) = discord.as_mut() {
+                    if let Err(error) = discord_client.clear_activity() {
+                        println!("Discord connection lost: {}", error);
 
-                println!("Discord activity cleared!");
+                        discord = None;
+                        next_reconnect = Instant::now() + Duration::from_secs(5);
+                    }
+                }
             }
 
             SessionEvent::None => {}
@@ -280,11 +288,15 @@ fn monitor() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn find_instance(system: &System) -> Option<Instance> {
-    for(_pid, process) in system.processes() {
+    for (_pid, process) in system.processes() {
         let name = process.name().to_string_lossy();
         let command = process.cmd();
 
-        if name == "java" && command.iter().any(|arg| arg == "org.prismlauncher.EntryPoint") {
+        if name == "java"
+            && command
+                .iter()
+                .any(|arg| arg == "org.prismlauncher.EntryPoint")
+        {
             for arg in command {
                 let arg = arg.to_string_lossy();
 
@@ -295,7 +307,7 @@ fn find_instance(system: &System) -> Option<Instance> {
                                 return Some(instance);
                             }
                             Err(error) => {
-                                println!("Erreur : {}", error);
+                                println!("Error : {}", error);
                             }
                         }
                     }
@@ -312,15 +324,10 @@ fn read_instance(path: &Path) -> Result<Instance, Box<dyn std::error::Error>> {
     let config = fs::read_to_string(&config_path)?;
 
     let mut name = String::from("Unknown");
-    let mut java_version = String::from("Unknown");
 
     for line in config.lines() {
         if let Some(value) = line.strip_prefix("name=") {
             name = value.to_string();
-        }
-
-        if let Some(value) = line.strip_prefix("JavaVersion=") {
-            java_version = value.to_string();
         }
     }
 
@@ -328,9 +335,7 @@ fn read_instance(path: &Path) -> Result<Instance, Box<dyn std::error::Error>> {
 
     Ok(Instance {
         name,
-        path: path.to_path_buf(),
         minecraft_version,
-        java_version,
     })
 }
 
