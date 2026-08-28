@@ -25,6 +25,9 @@ enum SessionEvent {
     None,
 }
 
+
+// TODO: Fix version detection issues with GregTech for example
+// Error : missing field `version` at line 28 column 9
 fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> SessionEvent {
     match instance {
         Some(instance) => {

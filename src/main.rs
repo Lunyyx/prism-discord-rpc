@@ -1,3 +1,4 @@
+mod config;
 mod discord;
 mod monitor;
 mod models;
@@ -7,6 +8,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         env_logger::Env::default().default_filter_or("info")
     )
     .init();
+
+    config::init()?;
+    
+    config::CONFIG.set(config::load()?).expect("Config already initialized!");
 
     monitor::monitor()
 }

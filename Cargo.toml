@@ -1,12 +1,15 @@
 [package]
 name = "prism-discord-rpc"
-version = "0.0.3"
+version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dirs = "6.0.0"
 env_logger = "0.11.11"
 log = "0.4.33"
+oncelock = "0.1.0-alpha.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sysinfo = "0.39.6"
+toml = "1.1.4"
 uuid = { version = "1.24.1", features = ["v4"] }
