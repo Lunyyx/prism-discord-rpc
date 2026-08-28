@@ -16,7 +16,7 @@ pub struct MmcPack {
 #[derive(Deserialize)]
 pub struct Component {
     uid: String,
-    version: String,
+    version: Option<String>,
 }
 
 enum SessionEvent {
@@ -25,9 +25,6 @@ enum SessionEvent {
     None,
 }
 
-
-// TODO: Fix version detection issues with GregTech for example
-// Error : missing field `version` at line 28 column 9
 fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> SessionEvent {
     match instance {
         Some(instance) => {
@@ -221,7 +218,11 @@ fn read_minecraft_version(path: &Path) -> Result<String, Box<dyn std::error::Err
 
     for component in pack.components {
         if component.uid == "net.minecraft" {
-            return Ok(component.version);
+            if let Some(version) = component.version {
+                return Ok(version);
+            }
+
+            return Err("Minecraft version not found".into());
         }
     }
 
