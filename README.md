@@ -4,29 +4,44 @@ A simple tool to automatically display your Minecraft instance and playtime from
 
 ![Discord RPC example](docs/discord.png)
 
-# Build
+# Installation
 
 > [!IMPORTANT]
 > Discord must be running for the Rich Presence to work.
 
-1. Clone the repository
+## Automatic installation
+
+You can run the following command to install this tool:
+
 ```bash
-git clone https://github.com/Lunyyx/prism-discord-rpc.git
+curl -fsSL https://raw.githubusercontent.com/Lunyyx/prism-discord-rpc/refs/heads/master/install.sh | bash
 ```
 
-2. Open the project directory
+## Service management
+
+Check status:
 ```bash
-cd prism-discord-rpc
+systemctl --user status prism-discord-rpc
 ```
 
-3. Build the project
+Start service:
 ```bash
-cargo build --release
+systemctl --user start prism-discord-rpc
 ```
 
-4. Execute the project
+Stop service:
 ```bash
-./target/release/prism-discord-rpc
+systemctl --user stop prism-discord-rpc
+```
+
+Restart service:
+```bash
+systemctl --user restart prism-discord-rpc
+```
+
+View logs:
+```bash
+journalctl --user -u prism-discord-rpc
 ```
 
 # Configuration
@@ -83,4 +98,26 @@ This will display:
 Minecraft - 1.21.1
 Playing ATM10
 Prism Launcher
+```
+
+# Build
+
+1. Clone the repository
+```bash
+git clone https://github.com/Lunyyx/prism-discord-rpc.git
+```
+
+2. Open the project directory
+```bash
+cd prism-discord-rpc
+```
+
+3. Build the project
+```bash
+cargo build --release
+```
+
+4. Execute the project
+```bash
+./target/release/prism-discord-rpc
 ```
