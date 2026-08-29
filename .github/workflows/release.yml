@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "*.*.*"
+      - "*.*.*-*"
 
 permissions:
   contents: write
@@ -71,8 +72,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
 
       - name: Download binaries
         uses: actions/download-artifact@v4
@@ -80,11 +79,29 @@ jobs:
           path: release-assets
           merge-multiple: true
 
-      - name: Add changelog
-        run: cp CHANGELOG.md release-assets/CHANGELOG.md
+      - name: Extract release notes
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          awk -v version="$VERSION" '
+            $0 == "## " version {
+              found = 1
+              next
+            }
 
-      - name: Create Release
+            found && /^## / {
+              exit
+            }
+
+            found {
+              print
+            }
+          ' CHANGELOG.md > release-notes.md
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          name: "[**prism-discord-rpc v${{ github.ref_name }}**](https://github.com/Lunyyx/prism-discord-rpc/releases/tag/${{ github.ref_name }})"
+          body_path: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: release-assets/*
