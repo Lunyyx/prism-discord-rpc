@@ -7,22 +7,15 @@ use serde::{Deserialize, Serialize};
 pub static CONFIG: OnceLock<Config> = OnceLock::new();
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum PlayTextType {
-    Prism,
-    Minecraft,
-    MinecraftVersion,
-    ProfileName,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    pub discord: DiscordConfig,
+    pub discord_activity: DiscordActivityConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DiscordConfig {
-    pub play_text: Vec<PlayTextType>,
-    pub play_text_separator: String,
+pub struct DiscordActivityConfig {
+    pub name: String,
+    pub details: String,
+    pub state: String,
 }
 
 pub fn init() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,9 +34,10 @@ pub fn init() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::File::create(&config_file).unwrap();
     
         let default_config = Config { 
-            discord: DiscordConfig {
-                play_text: vec![PlayTextType::Minecraft, PlayTextType::MinecraftVersion], 
-                play_text_separator: " - ".to_string() 
+            discord_activity: DiscordActivityConfig {
+                name: "Minecraft".to_string(), 
+                details: "{{ minecraft_version }}".to_string(),
+                state: "{{ instance_name }}".to_string(),
             } 
         };
 

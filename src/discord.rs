@@ -2,7 +2,8 @@ use log::info;
 use std::os::unix::net::UnixStream;
 use std::io::{Read, Write};
 use crate::models::Session;
-use crate::config::{self, PlayTextType};
+use crate::config;
+use crate::template::format_text;
 
 const DISCORD_CLIENT_ID: &str = "1538515152788258837";
 
@@ -12,27 +13,13 @@ pub struct DiscordClient {
 
 impl DiscordClient {
     pub fn update_from_session(&mut self, session: &Session) -> Result<(), Box<dyn std::error::Error>> {
-        let state = format!("Minecraft {}", session.instance.minecraft_version);
-
         let config = config::CONFIG.get().unwrap();
-        let mut activity_name = String::new();
 
-        for (i, text) in config.discord.play_text.iter().enumerate() {
-            if i > 0 {
-                activity_name.push_str(&config.discord.play_text_separator);
-            }
+        let activity_name = format_text(&config.discord_activity.name, session)?;
+        let activity_details = format_text(&config.discord_activity.details, session)?;
+        let activity_state = format_text(&config.discord_activity.state, session)?;
 
-            let value = match text {
-                PlayTextType::Minecraft => "Minecraft".to_string(),
-                PlayTextType::MinecraftVersion => session.instance.minecraft_version.to_string(),
-                PlayTextType::Prism => "Prism".to_string(),
-                PlayTextType::ProfileName => session.instance.name.to_string(),
-            };
-
-            activity_name.push_str(&value);
-        }
-
-        self.set_activity(&activity_name.to_string(), &session.instance.name, &state)
+        self.set_activity(&activity_name, &activity_details, &activity_state)
     }
 
     pub fn clear_activity(&mut self) -> Result<(), Box<dyn std::error::Error>> {

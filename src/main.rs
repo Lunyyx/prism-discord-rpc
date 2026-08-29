@@ -2,6 +2,7 @@ mod config;
 mod discord;
 mod monitor;
 mod models;
+mod template;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(

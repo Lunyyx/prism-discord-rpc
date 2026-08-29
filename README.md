@@ -36,38 +36,51 @@ The configuration file is located at:
 ~/.config/prism-discord-rpc/config.toml
 ```
 
-## `[discord]`
+> [!WARNING]
+> You are responsible for the text displayed through this tool. Using offensive, illegal, or otherwise prohibited text may result in action being taken against your Discord account.
+
+## `[discord_activity]`
 | Option | Description | Example |
 |---|---|---|
-| `play_text` | Information displayed in the Rich Presence, in the specified order. | `["Minecraft", "MinecraftVersion"]` |
-| `play_text_separator` | Separator between each `play_text` value. | `" - "` |
+| `name` | Name displayed in the Rich Presence. Supports variables. | `"Minecraft"` |
+| `details` | Details displayed in the Rich Presence. Supports variables. | `"Playing {{ minecraft_version }}"` |
+| `state` | State displayed in the Rich Presence. Supports variables. | `"{{ profile_name }}"` |
 
-### `play_text` values
+### Available variables
 
-| Value | Description |
+| Variable | Description |
 |---|---|
-| `Prism` | Prism Launcher |
-| `Minecraft` | Minecraft |
-| `MinecraftVersion` | Minecraft version |
-| `ProfileName` | Instance/profile name |
+| `{{ minecraft_version }}` | Minecraft version |
+| `{{ profile_name }}` | Instance/profile name |
 
 ### Examples
 
 ```toml
-[discord]
-play_text = ["Minecraft", "MinecraftVersion"]
-play_text_separator = " - "
+[discord_activity]
+name = "Minecraft"
+details = "{{ minecraft_version }}"
+state = "{{ profile_name }}"
 ```
 
 This will display:
-``Minecraft - 1.21.1``
 
-```toml
-[discord]
-play_text = ["ProfileName", "Minecraft", "MinecraftVersion"]
-play_text_separator = " | "
+```
+Minecraft
+1.21.1
+ATM10
+```
+
+You can freely combine and order variables:
+```
+[discord_activity]
+name = "{{ minecraft }} - {{ minecraft_version }}"
+details = "Playing {{ profile_name }}"
+state = "Prism Launcher"
 ```
 
 This will display:
-``ATM10 | Minecraft | 1.21.1``
-
+```
+Minecraft - 1.21.1
+Playing ATM10
+Prism Launcher
+```
