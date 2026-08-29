@@ -102,30 +102,40 @@ impl DiscordClient {
     }
 
     pub fn connect() -> Result<Self, Box<dyn std::error::Error>> {
-        let runtime_dir = std::env::var("XDG_RUNTIME_DIR")?;
+        let os = std::env::consts::OS;
 
-        for i in 0..10 {
-            let socket_path = format!("{}/discord-ipc-{}", runtime_dir, i);
+        let runtime_dir: Option<String> = if os == "macos" {
+            Some(std::env::var("TMPDIR")?)
+        } else if os == "linux" {
+            Some(std::env::var("XDG_RUNTIME_DIR")?)
+        } else {
+            None
+        };
 
-            match UnixStream::connect(&socket_path) {
-                Ok(socket) => {
-                    info!("Connected to Discord IPC!");
+        if let Some(runtime_dir) = runtime_dir {
+            for i in 0..10 {
+                let socket_path = format!("{}/discord-ipc-{}", runtime_dir, i);
 
-                    let mut client = Self { socket };
+                match UnixStream::connect(&socket_path) {
+                    Ok(socket) => {
+                        info!("Connected to Discord IPC!");
 
-                    let handshake = serde_json::json!({
-                        "v": 1,
-                        "client_id": DISCORD_CLIENT_ID
-                    });
+                        let mut client = Self { socket };
 
-                    Self::send(&mut client.socket, 0, &handshake.to_string())?;
+                        let handshake = serde_json::json!({
+                            "v": 1,
+                            "client_id": DISCORD_CLIENT_ID
+                        });
 
-                    let _ = Self::receive(&mut client.socket)?;
+                        Self::send(&mut client.socket, 0, &handshake.to_string())?;
 
-                    return Ok(client);
+                        let _ = Self::receive(&mut client.socket)?;
+
+                        return Ok(client);
+                    }
+
+                    Err(_) => {}
                 }
-
-                Err(_) => {}
             }
         }
 
