@@ -101,7 +101,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "[**prism-discord-rpc v${{ github.ref_name }}**](https://github.com/Lunyyx/prism-discord-rpc/releases/tag/${{ github.ref_name }})"
+          name: "prism-discord-rpc v${{ github.ref_name }}"
           body_path: release-notes.md
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: release-assets/*
