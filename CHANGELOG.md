@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2-alpha
+
+- Test of the pre-release functionnality
+
 ## 0.2.1
 
 ### Added

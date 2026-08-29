@@ -462,7 +462,7 @@ dependencies = [
 
 [[package]]
 name = "prism-discord-rpc"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "dirs",
  "env_logger",
