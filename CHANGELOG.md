@@ -1,8 +1,17 @@
 # Changelog
 
-## 0.2.2-alpha
+## 0.2.2-beta
 
-- Test of the pre-release functionnality
+### Added
+
+- macOS documentation
+- Automatic Linux arm64 builds
+- Automatic macOS arm64 builds
+
+### Changed
+
+- Changed the old `minecraft` variable in the README to plain text
+- Added arm64 support to the installation script for both Linux and macOS
 
 ## 0.2.1
 

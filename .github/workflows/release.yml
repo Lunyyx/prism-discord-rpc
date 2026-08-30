@@ -22,10 +22,20 @@ jobs:
             target: x86_64-unknown-linux-gnu
             asset: linux-x64
 
+          - name: Linux arm64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            asset: linux-arm64
+
           - name: macOS x64
             os: macos-15-intel
             target: x86_64-apple-darwin
             asset: darwin-x64
+
+          - name: macOS arm64
+            os: macos-15
+            target: aarch64-apple-darwin
+            asset: darwin-arm64
 
     runs-on: ${{ matrix.os }}
 

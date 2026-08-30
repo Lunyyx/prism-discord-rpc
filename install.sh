@@ -15,6 +15,9 @@ case "${OS}" in
             x86_64)
                 ASSET_SUFFIX="linux-x64"
                 ;;
+            aarch64)
+                ASSET_SUFFIX="linux-arm64"
+                ;;
             *)
                 echo "Error: Unsupported architecture: ${ARCH}"
                 exit 1

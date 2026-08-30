@@ -11,6 +11,8 @@ A simple tool to automatically display your Minecraft instance and playtime from
 
 ## Automatic installation
 
+This script currently supports Linux x86_64 / arm64 and macOS x86_64 (Intel) / arm64 (Apple Silicon).
+
 You can run the following command to install this tool:
 
 ```bash
@@ -18,6 +20,8 @@ curl -fsSL https://raw.githubusercontent.com/Lunyyx/prism-discord-rpc/refs/heads
 ```
 
 ## Service management
+
+### Linux
 
 Check status:
 ```bash
@@ -42,6 +46,34 @@ systemctl --user restart prism-discord-rpc
 View logs:
 ```bash
 journalctl --user -u prism-discord-rpc
+```
+
+### MacOS
+
+Check status:
+```bash
+launchctl print gui/$(id -u)/prism-discord-rpc | grep -E "state =|pid ="
+```
+
+Start service:
+```bash
+launchctl start prism-discord-rpc
+```
+
+Stop service:
+```bash
+launchctl stop prism-discord-rpc
+```
+
+Restart service:
+```bash
+launchctl stop prism-discord-rpc
+launchctl start prism-discord-rpc
+```
+
+View logs:
+```bash
+tail -f ~/Library/Logs/prism-discord-rpc.error.log
 ```
 
 # Configuration
@@ -88,7 +120,7 @@ ATM10
 You can freely combine and order variables:
 ```
 [discord_activity]
-name = "{{ minecraft }} - {{ minecraft_version }}"
+name = "Minecraft - {{ minecraft_version }}"
 details = "Playing {{ profile_name }}"
 state = "Prism Launcher"
 ```
