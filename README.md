@@ -48,7 +48,7 @@ View logs:
 journalctl --user -u prism-discord-rpc
 ```
 
-### MacOS
+### macOS
 
 Check status:
 ```bash
@@ -118,7 +118,7 @@ ATM10
 ```
 
 You can freely combine and order variables:
-```
+```toml
 [discord_activity]
 name = "Minecraft - {{ minecraft_version }}"
 details = "Playing {{ profile_name }}"
