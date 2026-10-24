@@ -23,7 +23,19 @@ curl -fsSL https://raw.githubusercontent.com/Lunyyx/prism-discord-rpc/refs/heads
 
 Use the Discord desktop app and launch Minecraft through Prism Launcher. Browser-only Discord cannot receive local Rich Presence.
 
-Build from source with [Rust](https://rustup.rs/) and the Visual Studio C++ build tools (Desktop development with C++, including the Windows SDK):
+### From a release
+
+Download `prism-rpc-v<VERSION>-windows-x64.exe` from the [releases page](https://github.com/Lunyyx/prism-discord-rpc/releases) and [`install-windows.ps1`](install-windows.ps1) from the repository at the same tag, put them in the same folder, then run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install-windows.ps1 -BinaryPath .\prism-rpc-v<VERSION>-windows-x64.exe -StartAtLogon
+```
+
+Replace `<VERSION>` with the downloaded release version.
+
+### From source
+
+Build with [Rust](https://rustup.rs/) and the Visual Studio C++ build tools (Desktop development with C++, including the Windows SDK):
 
 ```powershell
 git clone https://github.com/Lunyyx/prism-discord-rpc.git
@@ -33,14 +45,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install-windows.ps1 -Start
 ```
 
 The installer runs without administrator privileges, starts the helper hidden, and installs it in `%LOCALAPPDATA%\Programs\PrismDiscordRPC`. Omit `-StartAtLogon` to skip adding a Windows sign-in shortcut; an existing shortcut is preserved on reinstall. The execution-policy override applies only to this invocation.
-
-The release workflow also builds `prism-rpc-v<VERSION>-windows-x64.exe`. Once a release includes that asset, it can be installed without Rust using `-BinaryPath`:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\install-windows.ps1 -BinaryPath .\prism-rpc-v<VERSION>-windows-x64.exe -StartAtLogon
-```
-
-Replace `<VERSION>` with the downloaded release version. Keep `install-windows.ps1` from the same release/source revision.
 
 ### Windows management
 
@@ -59,7 +63,7 @@ To disable automatic startup, remove `Prism Discord RPC.lnk` from the folder ope
 
 The helper retries if Discord is not open yet. If logs say Discord accepted the activity but it is not visible, check Discord's activity-sharing settings. The elapsed timer starts when the helper first detects the game and resets if the helper restarts.
 
-## Linux service management
+## Linux / macOS service management
 
 ### Linux
 
