@@ -21,11 +21,19 @@ jobs:
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             asset: linux-x64
+            extension: ""
 
           - name: macOS x64
             os: macos-15-intel
             target: x86_64-apple-darwin
             asset: darwin-x64
+            extension: ""
+
+          - name: Windows x64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            asset: windows-x64
+            extension: ".exe"
 
     runs-on: ${{ matrix.os }}
 
@@ -50,19 +58,20 @@ jobs:
             ${{ runner.os }}-${{ matrix.target }}-cargo-
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --locked --release --target ${{ matrix.target }}
 
       - name: Prepare release asset
+        shell: bash
         run: |
           mv \
-            "target/${{ matrix.target }}/release/prism-discord-rpc" \
-            "prism-rpc-v${{ github.ref_name }}-${{ matrix.asset }}"
+            "target/${{ matrix.target }}/release/prism-discord-rpc${{ matrix.extension }}" \
+            "prism-rpc-v${{ github.ref_name }}-${{ matrix.asset }}${{ matrix.extension }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: prism-rpc-${{ matrix.asset }}
-          path: prism-rpc-v${{ github.ref_name }}-${{ matrix.asset }}
+          path: prism-rpc-v${{ github.ref_name }}-${{ matrix.asset }}${{ matrix.extension }}
 
   release:
     name: Create GitHub Release

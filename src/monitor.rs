@@ -1,12 +1,12 @@
+use crate::discord::DiscordClient;
+use crate::models::{Instance, Session};
 use log::{error, info, warn};
 use serde::Deserialize;
 use std::fs;
-use std::path::{Path};
+use std::path::Path;
 use std::thread;
 use std::time::{Duration, Instant};
 use sysinfo::System;
-use crate::discord::DiscordClient;
-use crate::models::{Instance, Session};
 
 #[derive(Deserialize)]
 pub struct MmcPack {
@@ -33,7 +33,13 @@ fn update_session(session: &mut Option<Session>, instance: Option<Instance>) -> 
                 info!("Instance : {}", instance.name);
                 info!("Minecraft : {}", instance.minecraft_version);
 
-                *session = Some(Session { instance });
+                *session = Some(Session {
+                    instance,
+                    started_at: std::time::SystemTime::now()
+                        .duration_since(std::time::UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_secs(),
+                });
 
                 return SessionEvent::Started;
             }
@@ -91,8 +97,8 @@ pub fn monitor() -> Result<(), Box<dyn std::error::Error>> {
                     if !discord_connection_failed {
                         warn!("Discord connection failed: {}", error);
                         discord_connection_failed = true;
-                    }                    
-                    
+                    }
+
                     next_reconnect = Instant::now() + Duration::from_secs(5);
                 }
             }
@@ -162,11 +168,7 @@ fn find_instance(system: &System) -> Option<Instance> {
         let name = process.name().to_string_lossy();
         let command = process.cmd();
 
-        if name == "java"
-            && command
-                .iter()
-                .any(|arg| arg == "org.prismlauncher.EntryPoint")
-        {
+        if is_prism_java(&name, command) {
             for arg in command {
                 let arg = arg.to_string_lossy();
 
@@ -227,4 +229,25 @@ fn read_minecraft_version(path: &Path) -> Result<String, Box<dyn std::error::Err
     }
 
     Err("Minecraft component not found".into())
+}
+fn is_prism_java(name: &str, command: &[std::ffi::OsString]) -> bool {
+    matches!(
+        name.to_ascii_lowercase().as_str(),
+        "java" | "javaw" | "java.exe" | "javaw.exe"
+    ) && command
+        .iter()
+        .any(|arg| arg == "org.prismlauncher.EntryPoint")
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn detects_windows_and_unix_prism_java_only() {
+        let prism = vec!["org.prismlauncher.EntryPoint".into()];
+        for name in ["java", "java.exe", "javaw.exe", "JAVAW.EXE"] {
+            assert!(is_prism_java(name, &prism));
+            assert!(!is_prism_java(name, &["unrelated.Main".into()]));
+        }
+        assert!(!is_prism_java("notjava.exe", &prism));
+    }
 }
