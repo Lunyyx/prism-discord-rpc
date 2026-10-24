@@ -4,5 +4,6 @@ pub struct Instance {
 }
 
 pub struct Session {
+    pub started_at: u64,
     pub instance: Instance,
 }
